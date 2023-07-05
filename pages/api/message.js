@@ -6,7 +6,8 @@ const openAI = new OpenAIApi(configuration);
 export default async function handler(req, res) {
   const MessagingResponse = require("twilio").twiml.MessagingResponse;
   var messageResponse = new MessagingResponse();
-  const sentMessage = req.body.Body || "";
+  const sentMessage =
+    req.body.Body || "how many colors are there in a rainbow?";
   let replyToBeSent = "";
   if (sentMessage.trim().length === 0) {
     replyToBeSent = "We could not get your message. Please try again";
@@ -20,9 +21,11 @@ export default async function handler(req, res) {
         max_tokens: 50,
         // stop: "."
       });
-      replyToBeSent = completion.data.choices[0].text;
+      //  replyToBeSent = completion.data.choices[0].text;
+      replyToBeSent = removeIncompleteText(completion.data.choices[0].text);
     } catch (error) {
       if (error.response) {
+        console.log(error.response);
         replyToBeSent = "There was an issue with the server";
       } else {
         // error getting response
@@ -36,4 +39,12 @@ export default async function handler(req, res) {
     "Content-Type": "text/xml",
   });
   res.end(messageResponse.toString());
+}
+
+function removeIncompleteText(inputString) {
+  const match = inputString.match(/\b\.\s\d+/g);
+  const removeAfter = match
+    ? inputString.slice(0, inputString.lastIndexOf(match[match.length - 1]))
+    : inputString;
+  return removeAfter;
 }
